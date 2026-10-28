@@ -4,9 +4,14 @@ use App\Domain\Auth\Permissions;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\Member;
+use App\Http\Controllers\SetupController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LandingController::class, 'index'])->name('landing');
+
+// One-time, token-gated installer for hosts without SSH (inert unless
+// SETUP_TOKEN is set in .env). Remove the token after setup to disable it.
+Route::get('/setup/{token}', [SetupController::class, 'run'])->name('setup');
 
 /*
 |--------------------------------------------------------------------------

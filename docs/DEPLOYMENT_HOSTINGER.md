@@ -3,6 +3,60 @@
 Aplikasi: Laravel 11 (PHP 8.2+), MySQL/MariaDB. Panduan untuk Hostinger shared
 hosting (hPanel). Jangan menaruh `.env`, backup DB, atau file rahasia di folder publik.
 
+## Deploy via koneksi GitHub (metode yang kamu pilih)
+
+Repo: `https://github.com/EzraNahumury/web-poincust` (branch `main`). Aset
+frontend (`public/build`) sudah ikut di repo, jadi **tidak perlu Node** di server.
+`vendor/` dan `.env` **tidak** di repo — lihat langkah di bawah.
+
+> **Penting (keterbatasan shared hosting):** Integrasi Git bawaan hPanel pada
+> paket shared hanya menyalin repo ke `public_html` dan **tidak bisa** memindah
+> document root. Laravel butuh document root di folder `public/`. Karena itu,
+> deploy Laravel yang rapi & aman di Hostinger **memerlukan akses SSH**
+> (umumnya paket **Business ke atas**) agar bisa membuat symlink
+> `public_html → public/`. Tanpa SSH, menaruh seluruh aplikasi di `public_html`
+> berisiko (file internal & `.env` bisa terekspos) dan tidak disarankan.
+
+### Opsi A — Ada SSH (disarankan)
+
+1. **hPanel → Git**: hubungkan repository, branch `main`, clone ke folder
+   **di luar** `public_html`, mis. `~/avasport`. Aktifkan auto-deploy (webhook)
+   bila mau setiap `git push` otomatis `git pull`.
+2. Buka **SSH** lalu jalankan sekali:
+   ```bash
+   cd ~/avasport
+   composer install --no-dev --optimize-autoloader
+   cp .env.example .env
+   php artisan key:generate
+   # edit .env: APP_ENV=production, APP_DEBUG=false, APP_URL=https://domain,
+   #            DB_*, SESSION_SECURE_COOKIE=true
+   php artisan migrate --force
+   php artisan db:seed --force
+   php artisan admin:create --role=super_admin
+   php artisan config:cache && php artisan route:cache && php artisan view:cache
+   ```
+3. **Arahkan document root ke `public/`**: hapus `public_html` lalu symlink:
+   ```bash
+   rm -rf ~/public_html && ln -s ~/avasport/public ~/public_html
+   # atau arahkan domain ke ~/avasport/public via hPanel bila tersedia
+   ```
+4. Setiap deploy berikutnya: `git pull` (atau webhook) lalu — bila ada dependency
+   atau migrasi baru — ulangi `composer install --no-dev`, `migrate --force`,
+   dan `php artisan optimize`. Aset sudah ikut repo (tak perlu `npm`).
+
+### Opsi B — Tanpa SSH
+
+Integrasi Git bawaan tidak cukup untuk Laravel (lihat catatan di atas). Pilihan:
+- **Upgrade ke paket dengan SSH** (paling aman) lalu ikuti Opsi A, atau
+- Minta saya meng-commit `vendor/` ke repo (agar `composer install` tak perlu di
+  server) — **tetapi** masalah document root `public_html` belum teratasi tanpa
+  kemampuan symlink/ubah root, jadi ini bukan solusi lengkap.
+
+`APP_KEY` tetap wajib digenerate di server (`php artisan key:generate`), dan DB
+harus dibuat di hPanel lalu migrasi dijalankan (SSH, atau impor skrip bila tak ada SSH).
+
+---
+
 ## 0. Prasyarat di Hostinger
 
 - **PHP 8.2 atau 8.3** (hPanel → PHP Configuration). Ekstensi aktif: `pdo_mysql`,

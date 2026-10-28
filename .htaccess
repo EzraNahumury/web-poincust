@@ -1,0 +1,29 @@
+# ---------------------------------------------------------------------------
+# Root .htaccess for shared hosting where the web/document root is the PROJECT
+# root (e.g. Hostinger "Connect Git" clones the repo into public_html).
+#
+# Laravel's real entry point is public/index.php, so we forward every request
+# into public/ and hard-block direct access to the application files. This runs
+# automatically on every Git deploy — no hPanel document-root change needed.
+#
+# (If you instead point the document root straight at /public, this file simply
+#  sits outside the web root and is ignored — harmless.)
+# ---------------------------------------------------------------------------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Block direct access to sensitive files at the project root.
+    RewriteRule ^\.env - [F,L,NC]
+    RewriteRule ^\.git(/|$) - [F,L,NC]
+    RewriteRule ^(composer\.(json|lock)|package(-lock)?\.json|artisan|phpunit\.xml|vite\.config\.js|tailwind\.config\.js|postcss\.config\.js)$ - [F,L,NC]
+
+    # Block direct access to internal application directories.
+    RewriteRule ^(app|bootstrap|config|database|resources|routes|storage|tests|vendor|docs|node_modules)(/|$) - [F,L,NC]
+
+    # Forward everything else into Laravel's public/ folder.
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Deny listing just in case mod_rewrite is unavailable.
+Options -Indexes
